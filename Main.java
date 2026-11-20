@@ -1,95 +1,135 @@
 import java.util.Scanner;
-import java.util.Locale;
 
 public class Main {
     public static void main(String[] args) {
         Scanner input = new Scanner(System.in);
-        input.useLocale(Locale.US);
 
-        final double DRINK_PRICE = 15.50;
-        final double STUDENT_DISCOUNT_RATE = 0.10;
-        final double SENIOR_DISCOUNT_RATE = 0.05;
-        final double TIP_RATE = 0.10;
+        final int CORRECT_PIN = 1234;
+        final int MAX_ATTEMPTS = 3;
+        int attempts = 0;
+        boolean loggedIn = false;
+
+        double balance = 0.0;
+        double[] transactions = new double[100];
+        int transactionCount = 0;
 
         System.out.println("==================================");
-        System.out.println("       SMART RESTAURANT ORDER");
+        System.out.println("       WELCOME TO THE ATM");
         System.out.println("==================================");
 
-        System.out.print("Enter customer's name: ");
-        String customerName = input.nextLine();
+        // PIN authentication: maximum three attempts
+        while (attempts < MAX_ATTEMPTS && !loggedIn) {
+            System.out.print("Enter your PIN: ");
+            int enteredPin = input.nextInt();
 
-        System.out.print("Enter customer's age: ");
-        int age = input.nextInt();
-
-        System.out.print("Enter meal price: $");
-        double mealPrice = input.nextDouble();
-
-        System.out.print("Enter number of drinks: ");
-        int numberOfDrinks = input.nextInt();
-
-        System.out.print("Are you a student? (true/false): ");
-        boolean isStudent = input.nextBoolean();
-
-        System.out.print("Enter service rating (1-5): ");
-        int serviceRating = input.nextInt();
-
-        if (serviceRating < 1 || serviceRating > 5) {
-            System.out.println();
-            System.out.println("ERROR: Service rating must be between 1 and 5.");
-            input.close();
-            return;
+            if (enteredPin == CORRECT_PIN) {
+                loggedIn = true;
+                System.out.println("Login successful!");
+            } else {
+                attempts++;
+                System.out.println("Incorrect PIN.");
+                if (attempts < MAX_ATTEMPTS) {
+                    System.out.println("Attempts remaining: "
+                            + (MAX_ATTEMPTS - attempts));
+                }
+            }
         }
 
-        double drinksCost = numberOfDrinks * DRINK_PRICE;
-        double subtotal = mealPrice + drinksCost;
-
-        double discountRate;
-        String discountType;
-
-        if (isStudent && age >= 60) {
-            discountRate = STUDENT_DISCOUNT_RATE;
-            discountType = "Student discount (10%)";
-        } else if (isStudent) {
-            discountRate = STUDENT_DISCOUNT_RATE;
-            discountType = "Student discount (10%)";
-        } else if (age >= 60) {
-            discountRate = SENIOR_DISCOUNT_RATE;
-            discountType = "Senior discount (5%)";
+        if (!loggedIn) {
+            System.out.println("Your account is locked. Goodbye.");
         } else {
-            discountRate = 0.0;
-            discountType = "No discount";
+            int choice = 0;
+
+            // Repeat the menu until the user selects option 5
+            while (choice != 5) {
+                System.out.println();
+                System.out.println("========== ATM MENU ==========");
+                System.out.println("1. Check Balance");
+                System.out.println("2. Deposit Money");
+                System.out.println("3. Withdraw Money");
+                System.out.println("4. View Transactions");
+                System.out.println("5. Exit");
+                System.out.println("==============================");
+                System.out.print("Enter your choice: ");
+                choice = input.nextInt();
+
+                // Select an action using switch
+                switch (choice) {
+                    case 1:
+                        System.out.printf("Your current balance is: $%.2f%n",
+                                balance);
+                        break;
+
+                    case 2:
+                        System.out.print("Enter amount to deposit: $");
+                        double deposit = input.nextDouble();
+
+                        if (deposit <= 0) {
+                            System.out.println(
+                                    "Invalid amount. Deposit must be greater than zero.");
+                        } else if (transactionCount >= transactions.length) {
+                            System.out.println("Transaction history is full.");
+                        } else {
+                            balance += deposit;
+                            transactions[transactionCount] = deposit;
+                            transactionCount++;
+                            System.out.println("Deposit successful.");
+                            System.out.printf("New balance: $%.2f%n", balance);
+                        }
+                        break;
+
+                    case 3:
+                        System.out.print("Enter amount to withdraw: $");
+                        double withdrawal = input.nextDouble();
+
+                        if (withdrawal <= 0) {
+                            System.out.println(
+                                    "Invalid amount. Withdrawal must be greater than zero.");
+                        } else if (withdrawal > balance) {
+                            System.out.println("Error: Insufficient balance.");
+                        } else if (transactionCount >= transactions.length) {
+                            System.out.println("Transaction history is full.");
+                        } else {
+                            balance -= withdrawal;
+                            // A negative value records a withdrawal
+                            transactions[transactionCount] = -withdrawal;
+                            transactionCount++;
+                            System.out.println("Withdrawal successful.");
+                            System.out.printf("New balance: $%.2f%n", balance);
+                        }
+                        break;
+
+                    case 4:
+                        System.out.println("======= TRANSACTION HISTORY =======");
+                        if (transactionCount == 0) {
+                            System.out.println("No transactions recorded yet.");
+                        } else {
+                            // Print transactions in the order they occurred
+                            for (int i = 0; i < transactionCount; i++) {
+                                if (transactions[i] > 0) {
+                                    System.out.printf("Deposit: +$%.2f%n",
+                                            transactions[i]);
+                                } else {
+                                    System.out.printf("Withdrawal: -$%.2f%n",
+                                            -transactions[i]);
+                                }
+                            }
+                        }
+                        System.out.println("===================================");
+                        break;
+
+                    case 5:
+                        System.out.println("Thank you for using our ATM.");
+                        System.out.println("Goodbye!");
+                        break;
+
+                    default:
+                        System.out.println(
+                                "Invalid choice. Please select a number from 1 to 5.");
+                        break;
+                }
+            }
         }
-
-        double discountAmount = subtotal * discountRate;
-        double discountedTotal = subtotal - discountAmount;
-
-        double tipAmount;
-        if (serviceRating == 4 || serviceRating == 5) {
-            tipAmount = discountedTotal * TIP_RATE;
-        } else {
-            tipAmount = 0.0;
-        }
-
-        double finalBill = discountedTotal + tipAmount;
-        int wholeAmount = (int) finalBill;
-
-        System.out.println();
-        System.out.println("==================================");
-        System.out.println("          SMART RESTAURANT");
-        System.out.println("==================================");
-        System.out.println("Customer: " + customerName);
-        System.out.println("Age: " + age);
-        System.out.printf("Meal cost:       $%.2f%n", mealPrice);
-        System.out.printf("Drinks cost:     $%.2f%n", drinksCost);
-        System.out.printf("Subtotal:        $%.2f%n", subtotal);
-        System.out.println("Discount type:   " + discountType);
-        System.out.printf("Discount amount: $%.2f%n", discountAmount);
-        System.out.printf("Tip amount:      $%.2f%n", tipAmount);
-        System.out.printf("Final bill:      $%.2f%n", finalBill);
-        System.out.println("Whole amount:    $" + wholeAmount);
-        System.out.println("==================================");
-        System.out.println("       Thank you for ordering!");
-        System.out.println("==================================");
 
         input.close();
     }
